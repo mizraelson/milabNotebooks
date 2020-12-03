@@ -123,6 +123,7 @@ def read_mixcr_table(filename):
     result["J"] = result.J.str.replace("\*.*","")
     result["N"] = result.apply(lambda row: countN(row.VEnd,row.DStart,row.DEnd,row.JStart), axis = 1)
     result["CDR3length"] = result.CDR3nt.str.len()
+    result["count"] = result["count"].astype(int)
     return result
 
 def only_productive(data):
