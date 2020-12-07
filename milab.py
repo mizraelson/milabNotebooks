@@ -423,7 +423,6 @@ def createFolder(path):
 def samplesWithdraw(samples_dict, patterns: list):
     new_dict = {}
     for sample_id, metadata in sorted(samples_dict.items()):
-        for pattern in patterns:
-            if pattern in sample_id:
-                new_dict[sample_id] = metadata
+        if all(c in sample_id for c in patterns):
+            new_dict[sample_id] = metadata
     return new_dict
