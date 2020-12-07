@@ -112,18 +112,20 @@ def parse_anchorPoints(data):
 def read_mixcr_table(filename):
     result = pd.read_table(filename)
     result = parse_anchorPoints(result)
-    result = result[["cloneCount", "cloneFraction", "nSeqCDR3", "aaSeqCDR3", "allVHitsWithScore", \
-                     "allDHitsWithScore", "allJHitsWithScore", "VEnd", "DStart", "DEnd", "JStart"]]
-    result = result.rename(columns={"cloneCount": "count", \
-                                    "cloneFraction": "frequency", \
-                                    "nSeqCDR3": "CDR3nt", \
-                                    "aaSeqCDR3": "CDR3aa", \
-                                    "allVHitsWithScore": "V", \
-                                    "allDHitsWithScore": "D", \
-                                    "allJHitsWithScore": "J"})
+    result = result[["cloneCount", "cloneFraction", "nSeqCDR3", "aaSeqCDR3", "allVHitsWithScore",
+                     "allDHitsWithScore", "allJHitsWithScore", "allCHitsWithScore", "VEnd", "DStart", "DEnd", "JStart"]]
+    result = result.rename(columns={"cloneCount": "count",
+                                    "cloneFraction": "frequency",
+                                    "nSeqCDR3": "CDR3nt",
+                                    "aaSeqCDR3": "CDR3aa",
+                                    "allVHitsWithScore": "V",
+                                    "allDHitsWithScore": "D",
+                                    "allJHitsWithScore": "J",
+                                    "allCHitsWithScore": "C"})
     result["V"] = result.V.str.replace("\*.*", "")
     result["D"] = result.D.fillna("N/A").str.replace("\*.*", "")
     result["J"] = result.J.str.replace("\*.*", "")
+    result["C"] = result.C.str.replace("\*.*", "")
     result["N"] = result.apply(lambda row: countN(row.VEnd, row.DStart, row.DEnd, row.JStart), axis=1)
     result["CDR3length"] = result.CDR3nt.str.len()
     result["count"] = result["count"].astype(int)
@@ -155,20 +157,20 @@ def get_feature(data, feature, weighted=True):
 
 def countN(VEnd, DBegin, DEnd, JBegin):
     if pd.notna(DBegin):
-        if (VEnd != DBegin):
+        if VEnd != DBegin:
             VD = DBegin - VEnd
         else:
             VD = 0
-        if (JBegin != DEnd):
+        if JBegin != DEnd:
             DJ = JBegin - DEnd
         else:
             DJ = 0
         return VD + DJ
     else:
-        if (JBegin != VEnd):
+        if JBegin != VEnd:
             return JBegin - VEnd
         else:
-            return 0;
+            return 0
 
 
 def basicAnalisis(mixcr_path, chainDict, materialDict, fullClonesetsExportPath, functionalClonesetsExportPath,
@@ -232,9 +234,7 @@ def get_report(samplesDict, output_path, minnn=True):
     # Generating report
     report = pd.DataFrame()
     for sample, metadata in samplesDict.items():
-        single = {}
-        single["Sample_id"] = sample
-        single["Starting Material"] = metadata["material"]
+        single = {"Sample_id": sample, "Starting Material": metadata["material"]}
 
         if minnn:
             single["Total reads"] = metadata["extract_report"]["totalReads"]
@@ -260,10 +260,10 @@ def get_report(samplesDict, output_path, minnn=True):
 
     columns = ["Sample_id", "Starting Material", "Total reads"]
     if minnn:
-        columns.extend(("Reads matched pattern", "Reads passed 'NoWildcards' filter", "Reads used in consensus", \
+        columns.extend(("Reads matched pattern", "Reads passed 'NoWildcards' filter", "Reads used in consensus",
                         "Total consensuses", "Number of consensuses with overseq more then 2"))
-    columns.extend(("Aligned consensuses", "Number of consensuses in clonotypes", "Number of clonotypes", \
-                    "Number of consensuses in clonotypes after filtration", "Number of productive clonotypes", \
+    columns.extend(("Aligned consensuses", "Number of consensuses in clonotypes", "Number of clonotypes",
+                    "Number of consensuses in clonotypes after filtration", "Number of productive clonotypes",
                     "Mean weighted CDR3 length", "Mean weighted insert size"))
 
     report = report[columns]
@@ -282,7 +282,7 @@ def intersectPair(data1, data2, by):
         onColumn = "CDR3aa"
     else:
         return ("Wrong intersect parameter")
-    merge = pd.merge(data1, data2, on=[onColumn, "V", "J"], suffixes=('_1', '_2'), how="inner")
+    merge = pd.merge(data1, data2, on=[onColumn, "V", "J", "C"], suffixes=('_1', '_2'), how="inner")
 
     return round(data1["count"].sum()), \
            round(data2["count"].sum()), \
@@ -353,8 +353,10 @@ def getSampleTable(sampleDict, sampleid, functional=False):
     return pd.read_table(sampleDict[sampleid]["fullSamplePath"])
 
 
-def plotIntersectCorrelations(samplesDict, chain, functional=False, equalby=['CDR3nt', 'V', 'J'], figzise=(80, 80),
+def plotIntersectCorrelations(samplesDict, chain, functional=False, equalby=None, figzise=(80, 80),
                               output_path="", ylim=(-0.2, 40000), xlim=(-0.2, 40000)):
+    if equalby is None:
+        equalby = ['CDR3nt', 'V', 'J', "C"]
     validChainDict = {}
     for sampleId, metadata in samplesDict.items():
         if metadata["chain"] != chain:
@@ -367,24 +369,24 @@ def plotIntersectCorrelations(samplesDict, chain, functional=False, equalby=['CD
 
     fig.tight_layout(pad=5.0)
 
-    k = -1;
+    k = -1
     for i in reversed(range(nmbOfSamples)):
         for j in reversed(range(nmbOfSamples)):
             if i < j:
                 axes[i, j].axis('off')
             else:
-                k += 1;
+                k += 1
                 sample1 = getSampleTable(validChainDict, samplesPairList[k][1], functional)
                 sample2 = getSampleTable(validChainDict, samplesPairList[k][0], functional)
                 sample1id = samplesPairList[k][1]
                 sample2id = samplesPairList[k][0]
 
-                merge = sample1[['count', 'CDR3nt', "CDR3aa", 'V', 'J']].merge(
-                    sample2[['count', "CDR3aa", 'CDR3nt', 'V', 'J']], \
-                    how='outer', on=equalby, \
+                merge = sample1[['count', 'CDR3nt', "CDR3aa", 'V', 'J', 'C']].merge(
+                    sample2[['count', "CDR3aa", 'CDR3nt', 'V', 'J', 'C']],
+                    how='outer', on=equalby,
                     suffixes=['_1' + sample1id, '_2' + sample2id]).fillna(0)
                 sns.set(style="white", color_codes=True)
-                plot = sns.regplot(ax=axes[i][j], x='count_1' + sample1id, y='count_2' + sample2id, \
+                plot = sns.regplot(ax=axes[i][j], x='count_1' + sample1id, y='count_2' + sample2id,
                                    data=merge, fit_reg=False, scatter_kws={"s": 100})
 
                 plot.set(ylim=ylim, xlim=xlim, xscale="symlog", yscale="symlog")
