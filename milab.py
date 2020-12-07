@@ -353,14 +353,16 @@ def getSampleTable(sampleDict, sampleid, functional=False):
     return pd.read_table(sampleDict[sampleid]["fullSamplePath"])
 
 
-def plotIntersectCorrelations(samplesDict, chain, name_pattern=None, functional=False, equalby=None, figzise=(80, 80),
-                              output_path="", ylim=(-0.2, 40000), xlim=(-0.2, 40000)):
+def plotIntersectCorrelations(samplesDict, chain, name_pattern: list = None, functional=False, equalby=None,
+                              figzise=(80, 80), output_path="", ylim=(-0.2, 40000), xlim=(-0.2, 40000)):
     if name_pattern is None:
-        name_pattern = []
+        name_pattern = [chain]
+    else:
+        name_pattern.append(chain)
     if equalby is None:
         equalby = ['CDR3nt', 'V', 'J']
 
-    processed_dict = samplesWithdraw(samplesDict, name_pattern.append(chain))
+    processed_dict = samplesWithdraw(samplesDict, name_pattern)
 
     for sampleId, metadata in sorted(samplesDict.items()):
         if metadata["chain"] != chain:
