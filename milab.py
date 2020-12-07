@@ -353,63 +353,62 @@ def getSampleTable(sampleDict, sampleid, functional=False):
     return pd.read_table(sampleDict[sampleid]["fullSamplePath"])
 
 
-def plotIntersectCorrelations(samplesDict, chain, name_pattern: list = None, functional=False, equalby=None,
-                              figzise=(80, 80), output_path="", ylim=(-0.2, 40000), xlim=(-0.2, 40000)):
-    if name_pattern is None:
-        name_pattern = [chain]
-    else:
-        name_pattern.append(chain)
-    if equalby is None:
-        equalby = ['CDR3nt', 'V', 'J']
+def plotIntersectCorrelations(samplesDict, chain, functional=False, equalby=['CDR3nt', 'V', 'J'], figzise=(80, 80),
+                              output_path="", ylim=(-0.2, 40000), xlim=(-0.2, 40000)):
+    validChainDict = {}
+    for sampleId, metadata in samplesDict.items():
+        if metadata["chain"] != chain:
+            continue
+        validChainDict[sampleId] = metadata
 
-    processed_dict = samplesWithdraw(samplesDict, name_pattern)
-
-    # for sampleId, metadata in sorted(samplesDict.items()):
-    #     if metadata["chain"] != chain:
-    #         continue
-    #     processed_dict[sampleId] = metadata
-
-    nmbOfSamples = len(processed_dict)
-    samplesPairList = sorted(itertools.combinations_with_replacement(processed_dict, 2),
-                             key=lambda element: (element[0], element[1]), reverse=True)
+    nmbOfSamples = len(validChainDict)
+    samplesPairList = list(itertools.combinations_with_replacement(validChainDict, 2))
     fig, axes = plt.subplots(nrows=nmbOfSamples, ncols=nmbOfSamples, figsize=figzise, sharex=True, sharey=True)
 
-    fig.tight_layout(pad=7.0)
+    fig.tight_layout(pad=5.0)
 
-    k = -1
-    for i in range(nmbOfSamples):
-        for j in range(nmbOfSamples):
+    k = -1;
+    for i in reversed(range(nmbOfSamples)):
+        for j in reversed(range(nmbOfSamples)):
             if i < j:
                 axes[i, j].axis('off')
             else:
-                k += 1
-                sample1 = getSampleTable(processed_dict, samplesPairList[k][0], functional)
-                sample2 = getSampleTable(processed_dict, samplesPairList[k][1], functional)
-                sample1id = samplesPairList[k][0]
-                sample2id = samplesPairList[k][1]
+                k += 1;
+                sample1 = getSampleTable(validChainDict, samplesPairList[k][1], functional)
+                sample2 = getSampleTable(validChainDict, samplesPairList[k][0], functional)
+                sample1id = samplesPairList[k][1]
+                sample2id = samplesPairList[k][0]
 
                 merge = sample1[['count', 'CDR3nt', "CDR3aa", 'V', 'J']].merge(
-                    sample2[['count', "CDR3aa", 'CDR3nt', 'V', 'J']],
-                    how='outer', on=equalby,
+                    sample2[['count', "CDR3aa", 'CDR3nt', 'V', 'J']], \
+                    how='outer', on=equalby, \
                     suffixes=['_1' + sample1id, '_2' + sample2id]).fillna(0)
                 sns.set(style="white", color_codes=True)
-                plot = sns.regplot(ax=axes[i][j], x='count_2' + sample2id, y='count_1' + sample1id,
+                plot = sns.regplot(ax=axes[i][j], x='count_1' + sample1id, y='count_2' + sample2id, \
                                    data=merge, fit_reg=False, scatter_kws={"s": 100})
 
                 plot.set(ylim=ylim, xlim=xlim, xscale="symlog", yscale="symlog")
+                xlabel = sample1id
+                ylabel = sample2id
+                if j != 0:
+                    ylabel = ""
+                if i != nmbOfSamples - 1:
+                    xlabel = ""
                 axes[i][j].set_xticks([0, 1, 100, 10000])
                 axes[i][j].set_xticklabels(['0', '1', '100', '10000'], fontsize=35)
                 axes[i][j].set_yticks([0, 1, 100, 10000])
                 axes[i][j].set_yticklabels(['0', '1', '100', '10000'], fontsize=35)
-                #             axes[i][j].set_xlabel("")
-                #             axes[i][j].set_xlabel("")
 
-                axes[i][j].set_xlabel(sample2id, fontsize=40)
+                axes[i][j].set_xlabel(xlabel, fontsize=40, rotation=45, verticalalignment='top',
+                                      horizontalalignment='right')
 
-                axes[i][j].set_ylabel(sample1id, fontsize=40)
-        createFolder(output_path)
-        fig.savefig(output_path + ".intersect.pdf", bbox_inches='tight')
-        fig.savefig(output_path + ".intersect.png", bbox_inches='tight')
+                axes[i][j].set_ylabel(ylabel, fontsize=40, rotation=45, verticalalignment='top',
+                                      horizontalalignment='right', y=1.0)
+    if output_path != "":
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
+        fig.savefig(output_path + ".intersect.pdf")
+        fig.savefig(output_path + ".intersect.png")
 
 
 def createFolder(path):
