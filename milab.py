@@ -364,10 +364,10 @@ def plotIntersectCorrelations(samplesDict, chain, name_pattern: list = None, fun
 
     processed_dict = samplesWithdraw(samplesDict, name_pattern)
 
-    for sampleId, metadata in sorted(samplesDict.items()):
-        if metadata["chain"] != chain:
-            continue
-        processed_dict[sampleId] = metadata
+    # for sampleId, metadata in sorted(samplesDict.items()):
+    #     if metadata["chain"] != chain:
+    #         continue
+    #     processed_dict[sampleId] = metadata
 
     nmbOfSamples = len(processed_dict)
     samplesPairList = sorted(itertools.combinations_with_replacement(processed_dict, 2),
