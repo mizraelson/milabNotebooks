@@ -8,7 +8,8 @@ import seaborn as sns
 import matplotlib
 import matplotlib.pyplot as plt
 import itertools
-
+from numpy.random import default_rng
+import numpy as np
 
 def minnn_extract(R1, R2, minnn_output_base, output_suffix):
     cmd = f'minnn -Xmx25G extract \
@@ -185,8 +186,8 @@ def basicAnalisis(mixcr_path, chainDict, materialDict, fullClonesetsExportPath, 
 
     # Create list of samples based on .clns filees in mixcr folder
     samples = []
-    for filename in glob.glob(mixcr_path + "*.cln*"):
-        samples.append(re.sub("(.*/)(.*)(\.cln[a,s])", r"\2", filename))
+    for filename in glob.glob(mixcr_path + "*.vdjca"):
+        samples.append(re.sub("(.*/)(.*)(\.vdjca)", r"\2", filename))
 
     # get chain based on chainDict
     for sample in samples:
@@ -426,3 +427,23 @@ def samplesWithdraw(samples_dict, patterns: list):
         if all(c in sample_id for c in patterns):
             new_dict[sample_id] = metadata
     return new_dict
+
+
+def downsample(samples_dict, output_folder, x,functional = True):
+    if output_folder is None:
+        return "Please specify output folder"
+    createFolder(output_folder)
+    updated_samples_dict={}
+    if x < 0:
+        return "X must be a positive number"
+    for sample, metadata in samples_dict.items():
+        data = getSampleTable(samples_dict, sample, functional)
+        rng = default_rng()
+        downsample_nmbr = x if x < data["count"].sum() else data["count"].sum()
+        data["count"] = rng.multivariate_hypergeometric(data["count"].astype(np.int64), downsample_nmbr)
+        data = data.loc[data["count"] != 0]
+        output_path = output_folder + sample + "_" + str(downsample_nmbr) + ".txt"
+        data.to_csv(output_path, sep="\t", index=False)
+        updated_samples_dict[sample] = metadata
+        updated_samples_dict[sample]["downsamplePath"] = output_path
+    return updated_samples_dict
