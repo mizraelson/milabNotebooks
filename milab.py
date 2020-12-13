@@ -112,6 +112,8 @@ def parse_anchorPoints(data):
 
 def read_mixcr_table(filename):
     result = pd.read_table(filename)
+    if len(result) == 0:
+        return None
     result = parse_anchorPoints(result)
     result = result[["cloneCount", "cloneFraction", "nSeqCDR3", "aaSeqCDR3", "allVHitsWithScore",
                      "allDHitsWithScore", "allJHitsWithScore", "allCHitsWithScore", "VEnd", "DStart", "DEnd", "JStart"]]
@@ -198,7 +200,7 @@ def basicAnalisis(mixcr_path, chainDict, materialDict, fullClonesetsExportPath, 
         chain = get_key(sample, chainDict, "ALL")
         # load sample file
         data = read_mixcr_table(mixcr_path + sample + ".clonotypes." + chain + ".txt")
-        if len(data) == 0:
+        if data is None:
             continue
         fullSamplePath = fullClonesetsExportPath + sample + ".txt"
 
