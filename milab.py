@@ -198,7 +198,7 @@ def basicAnalisis(mixcr_path, chainDict, materialDict, fullClonesetsExportPath, 
         chain = get_key(sample, chainDict, "ALL")
         # load sample file
         data = read_mixcr_table(mixcr_path + sample + ".clonotypes." + chain + ".txt")
-        if len(data) == 1:
+        if len(data) == 0:
             continue
         fullSamplePath = fullClonesetsExportPath + sample + ".txt"
 
