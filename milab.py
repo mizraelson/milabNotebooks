@@ -106,10 +106,7 @@ def mixcr_run(species, material, Five_end, Three_end, adapters, R1, R2, output_p
 
 
 def parse_anchor_points(data):
-    anchor_points_regex = "^^(?:-?[0-9]*:){8}(?:-?[0-9]*):(?P<CDR3Begin>-?[0-9]*):(?P<V3Deletion>-?[0-9]*):(?P<VEnd>-?[" \
-                          "0-9]*):(?P<DStart>-?[0-9]*):(?P<D5Deletion>-?[0-9]*):(?P<D3Deletion>-?[0-9]*):(?P<DEnd>-?[" \
-                          "0-9]*):(?P<JStart>-?[0-9]*):(?P<J5Deletion>-?[0-9]*):(?P<CDR3End>-?[0-9]*):(?:-?[0-9]*:){2}(" \
-                          "?:-?[0-9]*)$ "
+    anchor_points_regex = "^^(?:-?[0-9]*:){8}(?:-?[0-9]*):(?P<CDR3Begin>-?[0-9]*):(?P<V3Deletion>-?[0-9]*):(?P<VEnd>-?[0-9]*):(?P<DStart>-?[0-9]*):(?P<D5Deletion>-?[0-9]*):(?P<D3Deletion>-?[0-9]*):(?P<DEnd>-?[0-9]*):(?P<JStart>-?[0-9]*):(?P<J5Deletion>-?[0-9]*):(?P<CDR3End>-?[0-9]*):(?:-?[0-9]*:){2}(?:-?[0-9]*)$"
     data = pd.concat([data, data.refPoints.str.extract(anchor_points_regex, expand=True).apply(pd.to_numeric)], axis=1)
     return data
 
