@@ -370,7 +370,7 @@ def plot_samples_intersect(samples_dict, chain, functional=False, equalby=None, 
         valid_chain_dict[sampleId] = metadata
 
     nmb_of_samples = len(valid_chain_dict)
-    samples_pair_list = list(itertools.combinations_with_replacement(valid_chain_dict, 2))
+    samples_pair_list = list(itertools.combinations_with_replacement(sorted(valid_chain_dict), 2))
     fig, axes = plt.subplots(nrows=nmb_of_samples, ncols=nmb_of_samples, figsize=figzise, sharex=True, sharey=True)
 
     fig.tight_layout(pad=5.0)
