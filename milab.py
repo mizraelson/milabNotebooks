@@ -178,7 +178,7 @@ def countN(VEnd, DBegin, DEnd, JBegin):
 
 def basicAnalisis(mixcr_path, chainDict, materialDict, fullClonesetsExportPath, functionalClonesetsExportPath,
                   minnn_path=""):
-    generalSamplesDict = {}
+    general_samples_dict = {}
 
     # Create folders if needed
     if not os.path.exists(fullClonesetsExportPath) and fullClonesetsExportPath != "":
@@ -195,44 +195,43 @@ def basicAnalisis(mixcr_path, chainDict, materialDict, fullClonesetsExportPath, 
     for sample in samples:
         if "Undetermined" in sample:
             continue
-        generalSamplesDict[sample] = {}
-
         chain = get_key(sample, chainDict, "ALL")
         # load sample file
         data = read_mixcr_table(mixcr_path + sample + ".clonotypes." + chain + ".txt")
         if data is None:
             continue
-        fullSamplePath = fullClonesetsExportPath + sample + ".txt"
+        general_samples_dict[sample] = {}
+        full_sample_path = fullClonesetsExportPath + sample + ".txt"
 
         # save pretty file to the folder
-        data.to_csv(fullSamplePath, sep="\t", index=False)
+        data.to_csv(full_sample_path, sep="\t", index=False)
 
-        dataProductive = only_productive(data)
+        data_productive = only_productive(data)
 
-        functionalSamplePath = functionalClonesetsExportPath + sample + ".txt"
+        functional_sample_path = functionalClonesetsExportPath + sample + ".txt"
 
-        dataProductive.to_csv(functionalSamplePath, sep="\t", index=False)
+        data_productive.to_csv(functional_sample_path, sep="\t", index=False)
 
-        generalSamplesDict[sample]["fullSamplePath"] = fullSamplePath
-        generalSamplesDict[sample]["functionalSamplePath"] = functionalSamplePath
-        generalSamplesDict[sample]["material"] = get_key(sample, materialDict, "RNA")
-        generalSamplesDict[sample]["productiveClonesNmbr"] = len(dataProductive)
-        generalSamplesDict[sample]["productiveReadsNmbr"] = dataProductive["count"].sum()
-        generalSamplesDict[sample]["meanCDR3"] = get_feature(dataProductive, "CDR3length", weighted=True)
-        generalSamplesDict[sample]["meanN"] = get_feature(dataProductive, "N", weighted=True)
-        generalSamplesDict[sample]["chain"] = chain
+        general_samples_dict[sample]["fullSamplePath"] = full_sample_path
+        general_samples_dict[sample]["functionalSamplePath"] = functional_sample_path
+        general_samples_dict[sample]["material"] = get_key(sample, materialDict, "RNA")
+        general_samples_dict[sample]["productiveClonesNmbr"] = len(data_productive)
+        general_samples_dict[sample]["productiveReadsNmbr"] = data_productive["count"].sum()
+        general_samples_dict[sample]["meanCDR3"] = get_feature(data_productive, "CDR3length", weighted=True)
+        general_samples_dict[sample]["meanN"] = get_feature(data_productive, "N", weighted=True)
+        general_samples_dict[sample]["chain"] = chain
 
         if minnn_path != "":
-            generalSamplesDict[sample]["extract_report"] = json.load(open(minnn_path + sample + "_extract.json"))
-            generalSamplesDict[sample]["extracted_filter"] = json.load(
+            general_samples_dict[sample]["extract_report"] = json.load(open(minnn_path + sample + "_extract.json"))
+            general_samples_dict[sample]["extracted_filter"] = json.load(
                 open(minnn_path + sample + "_extracted_filter.json"))
-            generalSamplesDict[sample]["consensus_report"] = json.load(open(minnn_path + sample + "_consensus.json"))
-            generalSamplesDict[sample]["consensus_filter_report"] = json.load(
+            general_samples_dict[sample]["consensus_report"] = json.load(open(minnn_path + sample + "_consensus.json"))
+            general_samples_dict[sample]["consensus_filter_report"] = json.load(
                 open(minnn_path + sample + "_consensus_filtered2.json"))
-        generalSamplesDict[sample]["align_report"] = json.load(open(mixcr_path + sample + "_align.json"))
-        generalSamplesDict[sample]["assemble_report"] = json.load(open(mixcr_path + sample + "_assemble.json"))
+        general_samples_dict[sample]["align_report"] = json.load(open(mixcr_path + sample + "_align.json"))
+        general_samples_dict[sample]["assemble_report"] = json.load(open(mixcr_path + sample + "_assemble.json"))
 
-    return generalSamplesDict
+    return general_samples_dict
 
 
 def get_report(samplesDict, output_path, minnn=True):
