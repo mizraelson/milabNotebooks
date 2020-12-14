@@ -11,11 +11,12 @@ import itertools
 from numpy.random import default_rng
 import numpy as np
 
-def minnn_extract(R1, R2, minnn_output_base, output_suffix):
+
+def minnn_extract(r1, r2, minnn_output_base, output_suffix):
     cmd = f'minnn -Xmx25G extract \
     --pattern \'(R1:N{{*}})\^tggtatcaacgcagagt(UMI:NNNNtNNNNtNNNN)tc(R2:N{{*}})\' -f \
     --json-report "{minnn_output_base}{output_suffix}.json" \
-    --input "{R1}" "{R2}" \
+    --input "{r1}" "{r2}" \
     --output "{minnn_output_base}{output_suffix}.mif"'
 
     process = subprocess.Popen([cmd], stdout=True, stderr=True, shell=True)
@@ -77,10 +78,10 @@ def minnn_mif2fastq(minnn_output_base, input_suffix, fastq_output_base):
 
 
 def minnn_run(R1, R2, minnn_output, fastq_output):
-    samplename = re.sub("(.*/)(.*)(_R[1,2].*\.gz)", r"\2", R1)
-    print(samplename)
-    minnn_output_base = minnn_output + samplename
-    fastq_output_base = fastq_output + samplename
+    sample_name = re.sub("(.*/)(.*)(_R[1,2].*\.gz)", r"\2", R1)
+    print(sample_name)
+    minnn_output_base = minnn_output + sample_name
+    fastq_output_base = fastq_output + sample_name
 
     minnn_extract(R1, R2, minnn_output_base, "_extract")
     minnn_filter(minnn_output_base, "NoWildcards(UMI)", "_extract", "_extracted_filter")
@@ -104,9 +105,12 @@ def mixcr_run(species, material, Five_end, Three_end, adapters, R1, R2, output_p
     process.wait()
 
 
-def parse_anchorPoints(data):
-    anchorPointsRegex = "^^(?:-?[0-9]*:){8}(?:-?[0-9]*):(?P<CDR3Begin>-?[0-9]*):(?P<V3Deletion>-?[0-9]*):(?P<VEnd>-?[0-9]*):(?P<DStart>-?[0-9]*):(?P<D5Deletion>-?[0-9]*):(?P<D3Deletion>-?[0-9]*):(?P<DEnd>-?[0-9]*):(?P<JStart>-?[0-9]*):(?P<J5Deletion>-?[0-9]*):(?P<CDR3End>-?[0-9]*):(?:-?[0-9]*:){2}(?:-?[0-9]*)$"
-    data = pd.concat([data, data.refPoints.str.extract(anchorPointsRegex, expand=True).apply(pd.to_numeric)], axis=1)
+def parse_anchor_points(data):
+    anchor_points_regex = "^^(?:-?[0-9]*:){8}(?:-?[0-9]*):(?P<CDR3Begin>-?[0-9]*):(?P<V3Deletion>-?[0-9]*):(?P<VEnd>-?[" \
+                        "0-9]*):(?P<DStart>-?[0-9]*):(?P<D5Deletion>-?[0-9]*):(?P<D3Deletion>-?[0-9]*):(?P<DEnd>-?[" \
+                        "0-9]*):(?P<JStart>-?[0-9]*):(?P<J5Deletion>-?[0-9]*):(?P<CDR3End>-?[0-9]*):(?:-?[0-9]*:){2}(" \
+                        "?:-?[0-9]*)$ "
+    data = pd.concat([data, data.refPoints.str.extract(anchor_points_regex, expand=True).apply(pd.to_numeric)], axis=1)
     return data
 
 
@@ -114,7 +118,7 @@ def read_mixcr_table(filename):
     result = pd.read_table(filename)
     if len(result) == 0:
         return None
-    result = parse_anchorPoints(result)
+    result = parse_anchor_points(result)
     result = result[["cloneCount", "cloneFraction", "nSeqCDR3", "aaSeqCDR3", "allVHitsWithScore",
                      "allDHitsWithScore", "allJHitsWithScore", "allCHitsWithScore", "VEnd", "DStart", "DEnd", "JStart"]]
     result = result.rename(columns={"cloneCount": "count",
@@ -129,7 +133,7 @@ def read_mixcr_table(filename):
     result["D"] = result.D.fillna("N/A").str.replace("\*.*", "")
     result["J"] = result.J.str.replace("\*.*", "")
     result["C"] = result.C.str.replace("\*.*", "")
-    result["N"] = result.apply(lambda row: countN(row.VEnd, row.DStart, row.DEnd, row.JStart), axis=1)
+    result["N"] = result.apply(lambda row: count_n(row.VEnd, row.DStart, row.DEnd, row.JStart), axis=1)
     result["CDR3length"] = result.CDR3nt.str.len()
     result["count"] = result["count"].astype(int)
     return result
@@ -142,8 +146,8 @@ def only_productive(data):
     return result
 
 
-def get_key(name, corrDict, default):
-    for pattern, value in corrDict.items():
+def get_key(name, corr_dict, default):
+    for pattern, value in corr_dict.items():
         if pattern in name:
             return value
     return default
@@ -158,7 +162,7 @@ def get_feature(data, feature, weighted=True):
         return 0
 
 
-def countN(VEnd, DBegin, DEnd, JBegin):
+def count_n(VEnd, DBegin, DEnd, JBegin):
     if pd.notna(DBegin):
         if VEnd != DBegin:
             VD = DBegin - VEnd
@@ -176,13 +180,13 @@ def countN(VEnd, DBegin, DEnd, JBegin):
             return 0
 
 
-def basicAnalisis(mixcr_path, chainDict, materialDict, fullClonesetsExportPath, functionalClonesetsExportPath,
-                  minnn_path=""):
+def basic_analysis(mixcr_path, chain_dict, material_dict, full_clonesets_export_path, functional_clonesets_export_path,
+                   minnn_path=""):
     general_samples_dict = {}
 
     # Create folders if needed
-    createFolder(fullClonesetsExportPath)
-    createFolder(functionalClonesetsExportPath)
+    create_folder(full_clonesets_export_path)
+    create_folder(functional_clonesets_export_path)
 
     # Create list of samples based on .clns filees in mixcr folder
     samples = []
@@ -194,15 +198,15 @@ def basicAnalisis(mixcr_path, chainDict, materialDict, fullClonesetsExportPath, 
         if "Undetermined" in sample:
             continue
         print(sample)
-        chain = get_key(sample, chainDict, "ALL")
+        chain = get_key(sample, chain_dict, "ALL")
         # load sample file
         data = read_mixcr_table(mixcr_path + sample + ".clonotypes." + chain + ".txt")
         if data is None:
             continue
         general_samples_dict[sample] = {}
 
-        full_sample_path = fullClonesetsExportPath + sample + ".txt"
-        functional_sample_path = functionalClonesetsExportPath + sample + ".txt"
+        full_sample_path = full_clonesets_export_path + sample + ".txt"
+        functional_sample_path = functional_clonesets_export_path + sample + ".txt"
 
         # save pretty file to the folder
         data.to_csv(full_sample_path, sep="\t", index=False)
@@ -212,7 +216,7 @@ def basicAnalisis(mixcr_path, chainDict, materialDict, fullClonesetsExportPath, 
 
         general_samples_dict[sample]["fullSamplePath"] = full_sample_path
         general_samples_dict[sample]["functionalSamplePath"] = functional_sample_path
-        general_samples_dict[sample]["material"] = get_key(sample, materialDict, "RNA")
+        general_samples_dict[sample]["material"] = get_key(sample, material_dict, "RNA")
         general_samples_dict[sample]["productiveClonesNmbr"] = len(data_productive)
         general_samples_dict[sample]["productiveReadsNmbr"] = data_productive["count"].sum()
         general_samples_dict[sample]["meanCDR3"] = get_feature(data_productive, "CDR3length", weighted=True)
@@ -232,10 +236,10 @@ def basicAnalisis(mixcr_path, chainDict, materialDict, fullClonesetsExportPath, 
     return general_samples_dict
 
 
-def get_report(samplesDict, output_path, minnn=True):
+def get_report(samples_dict, output_path, minnn=True):
     # Generating report
     report = pd.DataFrame()
-    for sample, metadata in samplesDict.items():
+    for sample, metadata in samples_dict.items():
         single = {"Sample_id": sample, "Starting Material": metadata["material"]}
 
         if minnn:
@@ -277,62 +281,62 @@ def get_report(samplesDict, output_path, minnn=True):
 
 # Returns file1 count, file2 count, file12 count, file21 count, file1 div, file2 div, div12,
 # freq1, freq2, freq12, freq21
-def intersectPair(data1, data2, by):
+def intersect_pair(data1, data2, by):
     if by == "nt":
-        onColumn = "CDR3nt"
+        on_column = "CDR3nt"
     elif by == "aa":
-        onColumn = "CDR3aa"
+        on_column = "CDR3aa"
     else:
         return ("Wrong intersect parameter")
-    merge = pd.merge(data1, data2, on=[onColumn, "V", "J", "C"], suffixes=('_1', '_2'), how="inner")
+    merge = pd.merge(data1, data2, on=[on_column, "V", "J", "C"], suffixes=('_1', '_2'), how="inner")
 
     return round(data1["count"].sum()), \
            round(data2["count"].sum()), \
            round(merge.count_1.sum()), \
            round(merge.count_2.sum()), \
-           round(len(data1[onColumn].unique())), \
-           round(len(data2[onColumn].unique())), \
-           round(len(merge[onColumn].unique())), \
+           round(len(data1[on_column].unique())), \
+           round(len(data2[on_column].unique())), \
+           round(len(merge[on_column].unique())), \
            data1["frequency"].sum(), \
            data2["frequency"].sum(), \
            merge.frequency_1.sum(), \
            merge.frequency_2.sum()
 
 
-def intersect(samplesDict, chain, by="nt", output_path="", functional=False):
-    intersectTable = pd.DataFrame()
-    for pair in list(itertools.combinations(samplesDict, 2)):
+def intersect(samples_dict, chain, by="nt", output_path="", functional=False):
+    intersect_table = pd.DataFrame()
+    for pair in list(itertools.combinations(samples_dict, 2)):
         row = {}
-        if samplesDict[pair[0]]["chain"] != chain or samplesDict[pair[1]]["chain"] != chain:
+        if samples_dict[pair[0]]["chain"] != chain or samples_dict[pair[1]]["chain"] != chain:
             continue
-        sample1 = getSampleTable(samplesDict, pair[0], functional)
-        sample2 = getSampleTable(samplesDict, pair[1], functional)
+        sample1 = get_sample_data(samples_dict, pair[0], functional)
+        sample2 = get_sample_data(samples_dict, pair[1], functional)
         row["Sample_id1"] = pair[0]
         row["Sample_id2"] = pair[1]
 
         row["count1"], row["count2"], row["count12"], row["count21"], row["div1"], row["div2"], row["div12"], \
-        row["freq1"], row["freq2"], row["freq12"], row["freq21"] = intersectPair(sample1, sample2, by=by)
-        intersectTable = intersectTable.append(row, ignore_index=True)
+        row["freq1"], row["freq2"], row["freq12"], row["freq21"] = intersect_pair(sample1, sample2, by=by)
+        intersect_table = intersect_table.append(row, ignore_index=True)
 
-    if len(intersectTable) != 0:
-        intersectTable = intersectTable[
+    if len(intersect_table) != 0:
+        intersect_table = intersect_table[
             ["Sample_id1", "Sample_id2", "count1", "count2", "count12", "count21", "div1", "div2",
              "div12", "freq1", "freq2", "freq12", "freq21"]]
-        intersectTable = intersectTable.sort_values(["Sample_id1", "Sample_id2"])
+        intersect_table = intersect_table.sort_values(["Sample_id1", "Sample_id2"])
         if output_path != "":
-            intersectTable.to_csv(output_path + "intersect" + chain + ".txt", sep="\t", index=False)
-    return intersectTable
+            intersect_table.to_csv(output_path + "intersect" + chain + ".txt", sep="\t", index=False)
+    return intersect_table
 
 
-def VJusage(samples_dict, segment, chain, functional=False, weighted=True, outputPath="", plot=True):
-    if not os.path.exists(outputPath) and outputPath != "":
-        os.makedirs(outputPath)
+def vj_usage(samples_dict, segment, chain, functional=False, weighted=True, output_path="", plot=True):
+    if not os.path.exists(output_path) and output_path != "":
+        os.makedirs(output_path)
 
     sample = {}
     for sample_id, metadata in samples_dict.items():
         if metadata["chain"] != chain:
             continue
-        data = getSampleTable(samples_dict, sample_id, functional)
+        data = get_sample_data(samples_dict, sample_id, functional)
         if weighted:
             sample[sample_id] = data.groupby(segment, axis=0)["count"].sum().apply(lambda x: x / data["count"].sum())
         else:
@@ -342,46 +346,46 @@ def VJusage(samples_dict, segment, chain, functional=False, weighted=True, outpu
     result = pd.DataFrame(sample).fillna(0)
     if plot:
         plot = sns.clustermap(result, z_score=1, cmap="coolwarm", xticklabels=True, yticklabels=True)
-    if outputPath != "":
+    if output_path != "":
         if plot:
-            plot.savefig(outputPath + segment + ".usage.pdf")
-        result.to_csv(outputPath + segment + ".usage.txt", sep="\t")
+            plot.savefig(output_path + segment + ".usage.pdf")
+        result.to_csv(output_path + segment + ".usage.txt", sep="\t")
     return result
 
 
-def getSampleTable(sampleDict, sampleid, functional=False):
+def get_sample_data(samples_dict, sample_id, functional=False):
     if functional:
-        return pd.read_table(sampleDict[sampleid]["functionalSamplePath"])
-    return pd.read_table(sampleDict[sampleid]["fullSamplePath"])
+        return pd.read_table(samples_dict[sample_id]["functionalSamplePath"])
+    return pd.read_table(samples_dict[sample_id]["fullSamplePath"])
 
 
-def plotIntersectCorrelations(samplesDict, chain, functional=False, equalby=None, figzise=(80, 80),
-                              output_path="", ylim=(-0.2, 40000), xlim=(-0.2, 40000)):
+def plot_samples_intersect(samples_dict, chain, functional=False, equalby=None, figzise=(80, 80),
+                           output_path="", ylim=(-0.2, 40000), xlim=(-0.2, 40000)):
     if equalby is None:
         equalby = ['CDR3nt', 'V', 'J', "C"]
-    validChainDict = {}
-    for sampleId, metadata in samplesDict.items():
+    valid_chain_dict = {}
+    for sampleId, metadata in samples_dict.items():
         if metadata["chain"] != chain:
             continue
-        validChainDict[sampleId] = metadata
+        valid_chain_dict[sampleId] = metadata
 
-    nmbOfSamples = len(validChainDict)
-    samplesPairList = list(itertools.combinations_with_replacement(validChainDict, 2))
-    fig, axes = plt.subplots(nrows=nmbOfSamples, ncols=nmbOfSamples, figsize=figzise, sharex=True, sharey=True)
+    nmb_of_samples = len(valid_chain_dict)
+    samples_pair_list = list(itertools.combinations_with_replacement(valid_chain_dict, 2))
+    fig, axes = plt.subplots(nrows=nmb_of_samples, ncols=nmb_of_samples, figsize=figzise, sharex=True, sharey=True)
 
     fig.tight_layout(pad=5.0)
 
     k = -1
-    for i in reversed(range(nmbOfSamples)):
-        for j in reversed(range(nmbOfSamples)):
+    for i in reversed(range(nmb_of_samples)):
+        for j in reversed(range(nmb_of_samples)):
             if i < j:
                 axes[i, j].axis('off')
             else:
                 k += 1
-                sample1 = getSampleTable(validChainDict, samplesPairList[k][1], functional)
-                sample2 = getSampleTable(validChainDict, samplesPairList[k][0], functional)
-                sample1id = samplesPairList[k][1]
-                sample2id = samplesPairList[k][0]
+                sample1 = get_sample_data(valid_chain_dict, samples_pair_list[k][1], functional)
+                sample2 = get_sample_data(valid_chain_dict, samples_pair_list[k][0], functional)
+                sample1id = samples_pair_list[k][1]
+                sample2id = samples_pair_list[k][0]
 
                 merge = sample1[['count', 'CDR3nt', "CDR3aa", 'V', 'J', 'C']].merge(
                     sample2[['count', "CDR3aa", 'CDR3nt', 'V', 'J', 'C']],
@@ -396,7 +400,7 @@ def plotIntersectCorrelations(samplesDict, chain, functional=False, equalby=None
                 ylabel = sample2id
                 if j != 0:
                     ylabel = ""
-                if i != nmbOfSamples - 1:
+                if i != nmb_of_samples - 1:
                     xlabel = ""
                 axes[i][j].set_xticks([0, 1, 100, 10000])
                 axes[i][j].set_xticklabels(['0', '1', '100', '10000'], fontsize=35)
@@ -409,19 +413,19 @@ def plotIntersectCorrelations(samplesDict, chain, functional=False, equalby=None
                 axes[i][j].set_ylabel(ylabel, fontsize=40, rotation=45, verticalalignment='top',
                                       horizontalalignment='right', y=1.0)
     if output_path != "":
-        createFolder(output_path)
-        fig.savefig(output_path + ".intersect.pdf", bbox_inches = "tight")
-        fig.savefig(output_path + ".intersect.png", bbox_inches = "tight")
+        create_folder(output_path)
+        fig.savefig(output_path + ".intersect.pdf", bbox_inches="tight")
+        fig.savefig(output_path + ".intersect.png", bbox_inches="tight")
 
 
-def createFolder(path):
+def create_folder(path):
     if path != "":
         output_folder = re.sub("(.*/)(.*)", r"\1", path)
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
 
 
-def samplesWithdraw(samples_dict, patterns: list):
+def filter_samples_dict(samples_dict, patterns: list):
     new_dict = {}
     for sample_id, metadata in sorted(samples_dict.items()):
         if all(c in sample_id for c in patterns):
@@ -429,15 +433,15 @@ def samplesWithdraw(samples_dict, patterns: list):
     return new_dict
 
 
-def downsample(samples_dict, output_folder, x,functional = True):
+def downsample(samples_dict, output_folder, x, functional=True):
     if output_folder is None:
         return "Please specify output folder"
-    createFolder(output_folder)
-    updated_samples_dict={}
+    create_folder(output_folder)
+    updated_samples_dict = {}
     if x < 0:
         return "X must be a positive number"
     for sample, metadata in samples_dict.items():
-        data = getSampleTable(samples_dict, sample, functional)
+        data = get_sample_data(samples_dict, sample, functional)
         rng = default_rng()
         downsample_nmbr = x if x < data["count"].sum() else data["count"].sum()
         data["count"] = rng.multivariate_hypergeometric(data["count"].astype(np.int64), downsample_nmbr)
