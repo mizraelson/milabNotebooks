@@ -181,10 +181,8 @@ def basicAnalisis(mixcr_path, chainDict, materialDict, fullClonesetsExportPath, 
     general_samples_dict = {}
 
     # Create folders if needed
-    if not os.path.exists(fullClonesetsExportPath) and fullClonesetsExportPath != "":
-        os.makedirs(fullClonesetsExportPath)
-    if not os.path.exists(functionalClonesetsExportPath) and functionalClonesetsExportPath != "":
-        os.makedirs(functionalClonesetsExportPath)
+    createFolder(fullClonesetsExportPath)
+    createFolder(functionalClonesetsExportPath)
 
     # Create list of samples based on .clns filees in mixcr folder
     samples = []
@@ -195,21 +193,21 @@ def basicAnalisis(mixcr_path, chainDict, materialDict, fullClonesetsExportPath, 
     for sample in samples:
         if "Undetermined" in sample:
             continue
+        print(sample)
         chain = get_key(sample, chainDict, "ALL")
         # load sample file
         data = read_mixcr_table(mixcr_path + sample + ".clonotypes." + chain + ".txt")
         if data is None:
             continue
         general_samples_dict[sample] = {}
+
         full_sample_path = fullClonesetsExportPath + sample + ".txt"
+        functional_sample_path = functionalClonesetsExportPath + sample + ".txt"
 
         # save pretty file to the folder
         data.to_csv(full_sample_path, sep="\t", index=False)
 
         data_productive = only_productive(data)
-
-        functional_sample_path = functionalClonesetsExportPath + sample + ".txt"
-
         data_productive.to_csv(functional_sample_path, sep="\t", index=False)
 
         general_samples_dict[sample]["fullSamplePath"] = full_sample_path
@@ -411,10 +409,9 @@ def plotIntersectCorrelations(samplesDict, chain, functional=False, equalby=None
                 axes[i][j].set_ylabel(ylabel, fontsize=40, rotation=45, verticalalignment='top',
                                       horizontalalignment='right', y=1.0)
     if output_path != "":
-        if not os.path.exists(output_path):
-            os.makedirs(output_path)
-        fig.savefig(output_path + ".intersect.pdf")
-        fig.savefig(output_path + ".intersect.png")
+        createFolder(output_path)
+        fig.savefig(output_path + ".intersect.pdf", bbox_inches = "tight")
+        fig.savefig(output_path + ".intersect.png", bbox_inches = "tight")
 
 
 def createFolder(path):
