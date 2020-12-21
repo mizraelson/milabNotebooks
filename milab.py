@@ -167,15 +167,19 @@ def count_n(VEnd, DBegin, DEnd, JBegin):
         else:
             VD = 0
         if JBegin != DEnd:
-            DJ = JBegin - DEnd
+            N = JBegin - DEnd
         else:
             DJ = 0
-        return VD + DJ
+            N = VD + DJ
     else:
         if JBegin != VEnd:
-            return JBegin - VEnd
+            N = JBegin - VEnd
         else:
             return 0
+    if N <= 0:
+        return 0
+    else:
+        return N
 
 
 def basic_analysis(mixcr_path, chain_dict, material_dict, full_clonesets_export_path, functional_clonesets_export_path,
