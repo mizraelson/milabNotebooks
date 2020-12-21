@@ -460,7 +460,8 @@ def merge_clonesets(samples_list, names_list, on="CDR3nt", value="count", how="o
     Indices in both list should correspond. By default merge_clonesets will merge clonesets on CDR3 nucleotide sequence
     and return a table with counts for each CDR3 sequence (rows) for every sample (column). Any column can be used as a
     merge on (ex. V , J, C, CDR3aa). Value can be set to any numeric column (ex. count, frequency, N, CDR3length) to
-    demonstrate the value for a particular feature the clonesets were merged on."""
+    demonstrate the value for a particular feature the clonesets were merged on.
+    Function should be one of: sum, count or mean and will be applied to the value series in each group."""
 
     if len(samples_list) != len(names_list):
         return "List of samples and list of names must be the same length"
