@@ -103,10 +103,12 @@ def mixcr_run(species, material, Five_end, Three_end, adapters, r1, r2, output_p
     samplename = get_sample_name_from_string(r1)
     output_base = output_path + samplename
     cmd = f'mixcr analyze amplicon -s {species} --starting-material {material} --5-end {Five_end} --3-end {Three_end} -f \
-    -j \
-    --adapters {adapters} {analyze_param}\
-    --align "{align_param}" --assemble "{assemble_param}" \
-    --report {output_base}.report {r1} {r2} {output_base}'
+    -j --adapters {adapters} {analyze_param}"'
+    if align_param != "":
+        cmd += f'--align "{align_param}'
+    if assemble_param != "":
+        cmd += f'--align "{assemble_param}'
+    cmd += f'--report {output_base}.report {r1} {r2} {output_base}'
 
     process = subprocess.Popen([cmd], stdout=True, stderr=True, shell=True)
     process.wait()
