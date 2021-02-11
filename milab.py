@@ -108,7 +108,7 @@ def mixcr_run(species, material, Five_end, Three_end, adapters, r1, r2, output_p
     --align "{align_param}" --assemble "{assemble_param}" \
     --report {output_base}.report {r1} {r2} {output_base}'
 
-    process = subprocess.Popen([cmd], stdout=True, stderr=True, shell=True)
+    process = subprocess.Popen([cmd], stdout=True, stderr=STDOUT, shell=True)
     process.wait()
 
 
