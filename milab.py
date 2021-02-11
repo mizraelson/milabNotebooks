@@ -102,8 +102,8 @@ def mixcr_run(species, material, Five_end, Three_end, adapters, r1, r2, output_p
               assemble_param=""):
     samplename = get_sample_name_from_string(r1)
     output_base = output_path + samplename
-    cmd = f'mixcr analyze amplicon -s {species} --starting-material {material} --5-end {Five_end} --3-end {Three_end} -f \
-    -j --adapters {adapters} {analyze_param}"'
+    cmd = f'mixcr analyze amplicon -s {species} --starting-material {material} --5-end {Five_end} --3-end {Three_end} -f\
+    -j {output_base} --adapters {adapters} {analyze_param}'
     if align_param != "":
         cmd += f'--align "{align_param}'
     if assemble_param != "":
@@ -240,8 +240,8 @@ def basic_analysis(mixcr_path, chain_dict, material_dict, full_clonesets_export_
             general_samples_dict[sample]["consensus_report"] = json.load(open(minnn_path + sample + "_consensus.json"))
             general_samples_dict[sample]["consensus_filter_report"] = json.load(
                 open(minnn_path + sample + "_consensus_filtered2.json"))
-        general_samples_dict[sample]["align_report"] = json.load(open(mixcr_path + sample + "_align.json"))
-        general_samples_dict[sample]["assemble_report"] = json.load(open(mixcr_path + sample + "_assemble.json"))
+        general_samples_dict[sample]["align_report"] = json.load(open(mixcr_path + sample + ".align.json"))
+        general_samples_dict[sample]["assemble_report"] = json.load(open(mixcr_path + sample + ".assemble.json"))
 
     return general_samples_dict
 
