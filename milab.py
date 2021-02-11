@@ -240,8 +240,8 @@ def basic_analysis(mixcr_path, chain_dict, material_dict, full_clonesets_export_
             general_samples_dict[sample]["consensus_report"] = json.load(open(minnn_path + sample + "_consensus.json"))
             general_samples_dict[sample]["consensus_filter_report"] = json.load(
                 open(minnn_path + sample + "_consensus_filtered2.json"))
-        general_samples_dict[sample]["align_report"] = json.load(open(mixcr_path + sample + ".align.json"))
-        general_samples_dict[sample]["assemble_report"] = json.load(open(mixcr_path + sample + ".assemble.json"))
+        general_samples_dict[sample]["align_report"] = json.load(open(mixcr_path + sample + ".align.jsonl"))
+        general_samples_dict[sample]["assemble_report"] = json.load(open(mixcr_path + sample + ".assemble.jsonl"))
 
     return general_samples_dict
 
