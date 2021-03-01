@@ -274,7 +274,7 @@ def get_report(samples_dict, output_path, minnn=True):
 
         report = report.append(single, ignore_index=True)
 
-    columns = ["Sample_id", "Starting Material", "Total reads"]
+    columns = ["Sample_id", "Starting Material", "Total reads", "Chain"]
     if minnn:
         columns.extend(("Reads matched pattern", "Reads passed 'NoWildcards' filter", "Reads used in consensus",
                         "Total consensuses", "Number of consensuses with overseq more then 2"))
