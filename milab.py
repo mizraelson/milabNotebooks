@@ -250,7 +250,7 @@ def get_report(samples_dict, output_path, minnn=True):
     # Generating report
     report = pd.DataFrame()
     for sample, metadata in samples_dict.items():
-        single = {"Sample_id": sample, "Starting Material": metadata["material"]}
+        single = {"Sample_id": sample, "Starting Material": metadata["material"], "Chain": metadata["chain"]}
 
         if minnn:
             single["Total reads"] = metadata["extract_report"]["totalReads"]
