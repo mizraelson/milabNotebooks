@@ -270,7 +270,8 @@ def get_report(samples_dict, output_path, minnn=True):
         single["Mean weighted insert size"] = metadata["meanN"]
 
         single["Number of productive clonotypes"] = metadata["productiveClonesNmbr"]
-        single["Number of consensuses in clonotypes after filtration"] = metadata["productiveReadsNmbr"]
+        single["Fraction of productive clonotypes"] = single["Number of productive clonotypes"] / single["Number of clonotypes"]
+        single["Number of consensuses in productive clonotypes"] = metadata["productiveReadsNmbr"]
 
         report = report.append(single, ignore_index=True)
 
@@ -279,8 +280,8 @@ def get_report(samples_dict, output_path, minnn=True):
         columns.extend(("Reads matched pattern", "Reads passed 'NoWildcards' filter", "Reads used in consensus",
                         "Total consensuses", "Number of consensuses with overseq more then 2"))
     columns.extend(("Aligned consensuses", "Number of consensuses in clonotypes", "Number of clonotypes",
-                    "Number of consensuses in clonotypes after filtration", "Number of productive clonotypes",
-                    "Mean weighted CDR3 length", "Mean weighted insert size"))
+                    "Number of consensuses in productive clonotypes", "Number of productive clonotypes",
+                    "Fraction of productive clonotypes", "Mean weighted CDR3 length", "Mean weighted insert size"))
 
     report = report[columns]
     if not minnn:
