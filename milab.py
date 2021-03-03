@@ -340,8 +340,7 @@ def intersect(samples_dict, chain, by="nt", output_path="", functional=False):
 
 
 def vj_usage(samples_dict, segment, chain, functional=False, weighted=True, output_path="", plot=True):
-    if not os.path.exists(output_path) and output_path != "":
-        os.makedirs(output_path)
+    create_folder(output_path)
 
     sample = {}
     for sample_id, metadata in samples_dict.items():
